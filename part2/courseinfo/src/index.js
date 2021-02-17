@@ -48,6 +48,6 @@ const App = () => {
     },
   ];
 
-  return course.map((topic) => <Course course={topic} />);
+  return course.map((obj) => <Course course={obj} />);
 };
 ReactDOM.render(<App />, document.getElementById("root"));
