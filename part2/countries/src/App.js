@@ -1,53 +1,66 @@
 import React, { useState, useEffect } from "react";
 
+import CountryInfo from "./components/CountryInfo";
+
+import axios from "axios";
+import CountryList from "./components/CountryList";
+
 function App() {
-  let [countriesList, setCountriesList] = useState([]);
-  const [nameFilter, setNameFilter] = useState("");
+  const [countriesList, setCountriesList] = useState([]);
+  const [countriesFilter, setCountriesFilter] = useState("");
+  const [showCountries, setShowCountries] = useState(false);
 
-  const filteredCountries = countriesList.filter((country) =>
-    country.name.includes(nameFilter)
-  );
+  useEffect(() => {
+    axios
+      .get("https://restcountries.eu/rest/v2/all")
+      .then((json) => setCountriesList(json.data));
+  }, []);
 
-  const countriesToShow =
-    filteredCountries.length > 10 ? [].concat() : filteredCountries.concat();
-
-  const getData = () => {
-    fetch("https://restcountries.eu/rest/v2/all")
-      .then((res) => res.json())
-      .then((data) => setCountriesList(countriesList.concat(data)));
-  };
+  useEffect(() => {
+    countriesFilter === "" ? setShowCountries(false) : setShowCountries(true);
+  }, [countriesFilter]);
 
   const handleFilter = (e) => {
-    setNameFilter(e.target.value);
+    setCountriesFilter(e.target.value);
   };
 
-  useEffect(getData, []);
+  const filteredCountries = countriesList.filter((country) =>
+    country.name.toLowerCase().includes(countriesFilter.toLowerCase())
+  );
 
-  if (filteredCountries.length === 1) {
+  const checkCountries = () => {
+    if (showCountries === false) return;
+    if (filteredCountries.length > 10)
+      return <p>Too many matches, specify another filter</p>;
+    if (filteredCountries.length === 1) {
+      const country = { ...filteredCountries[0] };
+      return (
+        <CountryInfo
+          capital={country.capital}
+          flag={country.flag}
+          languages={country.languages}
+          name={country.name}
+          population={country.population}
+        />
+      );
+    }
     return (
-      <>
-        Find countries: <input onChange={handleFilter} value={nameFilter} />
-        <h1>{countriesToShow[0].name}</h1>
-        <p>Capital: {countriesToShow[0].capital}</p>
-        <p>Population: {countriesToShow[0].population}</p>
-        <h2>Languages</h2>
-        <ul>
-          {countriesToShow[0].languages.map((language) => (
-            <li key={language.iso639_2}>{language.name}</li>
-          ))}
-        </ul>
-        <img src={countriesToShow[0].flag} alt={countriesToShow[0].name} />
-      </>
+      <ul>
+        {filteredCountries.map((country) => (
+          <CountryList
+            key={country.numericCode}
+            name={country.name}
+            setCountriesFilter={setCountriesFilter}
+          />
+        ))}
+      </ul>
     );
-  }
+  };
 
   return (
     <>
-      Find countries: <input onChange={handleFilter} value={nameFilter} />
-      <h1>Countries List</h1>
-      {countriesToShow.map((country) => (
-        <p key={country.numericCode}>{country.name}</p>
-      ))}
+      Find countries: <input onChange={handleFilter} value={countriesFilter} />
+      {checkCountries()}
     </>
   );
 }

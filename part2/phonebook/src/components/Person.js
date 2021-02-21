@@ -1,12 +1,10 @@
-export default function Person({ contacts }) {
-  console.log(contacts);
+export default function Person({ name, number, id, handleDelete }) {
   return (
-    <ul>
-      {contacts.map((person) => (
-        <li key={person.name}>
-          {person.name} - {person.number}
-        </li>
-      ))}
-    </ul>
+    <li key={name}>
+      <span>
+        {name} - {number}{" "}
+      </span>
+      <button onClick={handleDelete}>Delete</button>
+    </li>
   );
 }

@@ -4,7 +4,7 @@ import Person from "./components/Person";
 import Filter from "./components/Filter";
 import PersonForm from "./components/PersonForm";
 
-import axios from "axios";
+import { getData, postData, putData, deleteData } from "./services/handleData";
 
 const App = () => {
   const [persons, setPersons] = useState([]);
@@ -12,13 +12,11 @@ const App = () => {
   const [newNumber, setNewNumber] = useState("");
   const [filterName, setFilterName] = useState("");
 
-  const getData = () => {
-    axios
-      .get("http://localhost:3001/persons")
-      .then((res) => setPersons(persons.concat(res.data)));
+  const getPersons = () => {
+    getData().then((data) => setPersons(data));
   };
 
-  useEffect(getData, []);
+  useEffect(getPersons, []);
 
   const contactsToShow = filterName
     ? persons.filter((person) =>
@@ -30,11 +28,30 @@ const App = () => {
     e.preventDefault();
     const nameRepeated =
       persons.findIndex((person) => person.name === newName) !== -1;
-    if (nameRepeated) return alert(`${newName} is already added to phonebook`);
-    const newPersons = { name: newName, number: newNumber };
-    setPersons(persons.concat(newPersons));
-    setNewName("");
-    setNewNumber("");
+    if (nameRepeated) {
+      const confirm = window.confirm(
+        `${newName} is already added to phonebook, replace the old number with the new one?`
+      );
+      if (confirm) {
+        const contact = persons.find((person) => person.name === newName);
+        const newContact = { ...contact, number: newNumber };
+        putData(contact.id, newContact).then((res) => {
+          const newData = persons.map((person) =>
+            person.id !== res.id ? person : res
+          );
+          setPersons(newData);
+          setNewName("");
+          setNewNumber("");
+        });
+      }
+    } else {
+      const newPerson = { name: newName, number: newNumber };
+      postData(newPerson).then((response) => {
+        setPersons(persons.concat(response));
+      });
+      setNewName("");
+      setNewNumber("");
+    }
   };
 
   const handleChangeName = (e) => {
@@ -47,6 +64,15 @@ const App = () => {
 
   const handleFilter = (e) => {
     setFilterName(e.target.value);
+  };
+
+  const handleDelete = (id) => {
+    const confirm = window.confirm("Do you want to delete this contact?");
+    if (confirm) {
+      deleteData(id);
+      const newData = persons.filter((person) => person.id !== id);
+      setPersons(newData);
+    }
   };
 
   return (
@@ -62,7 +88,17 @@ const App = () => {
         handleSubmit={handleSubmit}
       />
       <h3>Numbers</h3>
-      <Person contacts={contactsToShow} />
+      <ul>
+        {contactsToShow.map((contact) => (
+          <Person
+            name={contact.name}
+            number={contact.number}
+            id={contact.id}
+            key={contact.id}
+            handleDelete={() => handleDelete(contact.id)}
+          />
+        ))}
+      </ul>
     </>
   );
 };
