@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import Person from "./components/Person";
 import Filter from "./components/Filter";
 import PersonForm from "./components/PersonForm";
+import Notification from "./components/Notification";
 
 import { getData, postData, putData, deleteData } from "./services/handleData";
 
@@ -11,6 +12,8 @@ const App = () => {
   const [newName, setNewName] = useState("");
   const [newNumber, setNewNumber] = useState("");
   const [filterName, setFilterName] = useState("");
+  const [notification, setNotification] = useState(null);
+  const [succeed, setSucceed] = useState(true);
 
   const getPersons = () => {
     getData().then((data) => setPersons(data));
@@ -39,9 +42,11 @@ const App = () => {
           const newData = persons.map((person) =>
             person.id !== res.id ? person : res
           );
+          setNotification(`Added ${newContact.name}`);
           setPersons(newData);
           setNewName("");
           setNewNumber("");
+          setSucceed(true);
         });
       }
     } else {
@@ -49,8 +54,10 @@ const App = () => {
       postData(newPerson).then((response) => {
         setPersons(persons.concat(response));
       });
+      setNotification(`Added ${newPerson.name} to the phonebook`);
       setNewName("");
       setNewNumber("");
+      setSucceed(true);
     }
   };
 
@@ -66,10 +73,16 @@ const App = () => {
     setFilterName(e.target.value);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = (id, name) => {
     const confirm = window.confirm("Do you want to delete this contact?");
     if (confirm) {
-      deleteData(id);
+      deleteData(id).catch((error) => {
+        console.log(error);
+        setSucceed(false);
+        setNotification(
+          `Information from ${name} has already been removed from server.`
+        );
+      });
       const newData = persons.filter((person) => person.id !== id);
       setPersons(newData);
     }
@@ -77,6 +90,11 @@ const App = () => {
 
   return (
     <>
+      {succeed ? (
+        <Notification message={notification} />
+      ) : (
+        <Notification message={notification} error />
+      )}
       <h2>Phonebook</h2>
       <Filter handleFilter={handleFilter} inputValue={filterName} />
       <h3>Add a new</h3>
@@ -95,7 +113,7 @@ const App = () => {
             number={contact.number}
             id={contact.id}
             key={contact.id}
-            handleDelete={() => handleDelete(contact.id)}
+            handleDelete={() => handleDelete(contact.id, contact.name)}
           />
         ))}
       </ul>
