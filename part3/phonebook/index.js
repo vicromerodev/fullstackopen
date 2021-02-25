@@ -1,9 +1,12 @@
-const { res, response } = require("express");
 const express = require("express");
+const morgan = require("morgan");
 
 const app = express();
 
 app.use(express.json());
+
+morgan.token("body", (req, res) => JSON.stringify(req.body));
+app.use(morgan(":method :url :status - :response-time ms :body"));
 
 const generateId = () => {
   const id = Math.round(Math.random() * 10000);
@@ -60,10 +63,7 @@ app.delete("/api/persons/:id", (req, res) => {
 
 app.post("/api/persons", (req, res) => {
   const body = req.body;
-  const isRepeated =
-    persons.filter((person) => person.name === body.name).length > 0
-      ? true
-      : false;
+  const isRepeated = persons.filter((p) => p.name === body.name).length > 0;
 
   if (!body.name || !body.number)
     return res.status(400).json({ error: "content missing" });
